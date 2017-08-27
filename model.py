@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow.python.ops.rnn_cell_impl import BasicLSTMCell
 from tensorflow.contrib.legacy_seq2seq.python.ops.seq2seq import rnn_decoder
+from tensorflow.python.ops.distributions.normal import Normal
 
 def _weight_variable(shape):
   initial = tf.truncated_normal(shape=shape, stddev=0.01)
@@ -13,12 +14,13 @@ def _bias_variable(shape):
 def _log_likelihood(loc_means, locs, variance):
   loc_means = tf.stack(loc_means)  # [timesteps, batch_sz, loc_dim]
   locs = tf.stack(locs)
-  gaussian = tf.contrib.distributions.Normal(loc_means, variance)
-  logll = gaussian.prob(value=locs)  # [timesteps, batch_sz, loc_dim]
+  gaussian = Normal(loc_means, variance)
+  logll = gaussian._log_prob(x=locs)  # [timesteps, batch_sz, loc_dim]
   logll = tf.reduce_sum(logll, 2)
   return tf.transpose(logll)      # [batch_sz, timesteps]
 
 class RetinaSensor(object):
+  # one scale
   def __init__(self, img_size, pth_size):
     self.img_size = img_size
     self.pth_size = pth_size
